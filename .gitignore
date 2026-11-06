@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+build/*
+!build/README.md
+extracted/*
+!extracted/README.md
+sdk/*
+!sdk/README.md
