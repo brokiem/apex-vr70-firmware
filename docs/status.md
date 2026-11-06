@@ -26,19 +26,34 @@ python3 scripts/verify.py firmware/dump1.bin
 - `build/patched-00.bin` — the baseline (no change at all). Boots on
   the device. Built and verified in this repo: `sha256` matches
   `firmware/dump1.bin` byte for byte.
-- `build/patched-01.bin` — `logo.bmp` replaced with a 360x640x32 test
-  pattern (AZ10, fits the 3326-byte slot). The device shows the pattern
-  with this change. Rebuild it with `00,01` before flashing.
-- `build/patched-02.bin` — `patches/02-transparent-status-bar.py`. The
-  grey FPV status-bar background is made transparent so the video
-  underneath shows through. The indicators still draw and update.
-  The current `e872a528…` binary is built and passes `verify.py`,
-  but has not been flashed yet. Flash it with `docs/flashing.md` and
-  report back boots / picture / buttons / menu / backlight.
+- `build/patched-01.bin` — `logo.bmp` replaced with seven analog
+  color bars (white, yellow, cyan, green, magenta, red, blue) in the
+  existing 360x640x32 BMP. The AZ10 payload is 278 bytes, fits the
+  3326-byte slot, and round-trips exactly; `scripts/verify.py` passes.
+  SHA-256: `95e9b30018677e92e2f8bc9794695fe9f410a39cfe402272007a3540b3173d4c`.
+  This changes the boot logo only, not the live no-signal screen. Device
+  testing of this updated pattern is outstanding.
+- `build/patched-02.bin` — combined build from the original dump using
+  patches `00,01,02`. It includes the boot-logo bars and status-bar changes.
+  In `app_root.axf`, the shared clear colors at flat offsets `0x00DC38`,
+  `0x00F620`, and `0x0114B4` are now transparent. The SD and APEX draw
+  entries at `0x010D34` and `0x010F7C` return immediately. The theme's five
+  `DV_RF_SIGNAL_*` resources and six `DV_SIGNAL_LEVEL_*` resources have zero
+  pixel alpha; the adjacent unchanged theme resource was relocated within
+  `theme.bin+0x191690..0x192271` to keep the theme file size fixed. The
+  patch verifies all target BMPs and confirms other resource payloads remain
+  byte-identical.
+  The band-text path at `0x00EBEC`, battery resources, and recording draw
+  code are not patched. `verify.py` passes; SHA-256 is
+  `2314495e5c12af1ca67bb393d529a272333cc4b66a176595fc81c47c4622562a`.
+  The user reports that this combined image was flashed successfully.
+  Detailed boot, display, control, and status-indicator results were not
+  specified. It replaces the previously generated standalone patch-02 image
+  at this output path.
 
-Each change was tested as a single change. Combine into one image
-(`00,01,02`) and that combined image still needs its own device
-test before anyone calls it proven.
+Patch 01 and patch 02 were also each rebuilt and verified independently
+before the combined build. The combined build was also verified before
+flashing; see the user-reported result above.
 
 Write and restore work: the whole image can be written at offset 0
 and read back byte-identical. That is the restore drill, already done once.
@@ -69,5 +84,6 @@ run `verify.py`, you can trust the result.
 1. Resolution work: find who reads `lcd_x` / `lcd_y` and where 480/272
    are hard-coded as literals in the display path.
 2. Receiver work: finish the SPI register map for band/channel search.
-3. Flash `build/patched-02.bin` and check the bar (see `docs/flashing.md`).
-   One logical change per build. Combined images need their own test.
+3. Record detailed device results for the combined image: boots, picture,
+   buttons, menu, backlight, and whether battery, band, and recording
+   statuses update while video shows through the bar.

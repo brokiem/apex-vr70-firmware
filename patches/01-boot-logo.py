@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""01 boot logo: replace logo.bmp with a colour test pattern.
+"""01 boot logo: replace logo.bmp with an analog TV color-bar test card.
 
 Usage:
     python3 patches/01-boot-logo.py build/work.bin
@@ -23,19 +23,20 @@ W, H = 360, 640
 
 def test_pattern():
     px = bytearray(W * H * 4)
+    bars = [
+        (255, 255, 255),
+        (255, 255, 0),
+        (0, 255, 255),
+        (0, 255, 0),
+        (255, 0, 255),
+        (255, 0, 0),
+        (0, 0, 255),
+    ]
     for y in range(H):
+        bar = min(y * len(bars) // H, len(bars) - 1)
+        r, g, b = bars[bar]
         for x in range(W):
             i = (y * W + x) * 4
-            # Three horizontal bands: red, green, blue (BGRA).
-            if y < H // 3:
-                b, g, r = 0, 0, 255
-            elif y < 2 * H // 3:
-                b, g, r = 0, 255, 0
-            else:
-                b, g, r = 255, 0, 0
-            # White border so orientation is obvious on screen.
-            if x < 8 or x >= W - 8 or y < 8 or y >= H - 8:
-                b, g, r = 255, 255, 255
             px[i:i + 4] = bytes([b, g, r, 255])
     return make_bmp(W, H, px)
 
